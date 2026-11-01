@@ -1,0 +1,10 @@
+{
+  "$id": "error",
+  "type": "object",
+  "required": ["error"],
+  "properties": {
+    "error": { "type": "string", "minLength": 1 },
+    "expectedTotal": { "type": "integer" }
+  },
+  "additionalProperties": false
+}

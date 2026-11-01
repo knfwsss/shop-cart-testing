@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Корзина интернет-магазина</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Корзина интернет-магазина</h1>
+    <p>Лабораторная работа — тестирование ПО</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Каталог товаров</h2>
+      <div id="products" class="product-grid" data-testid="products"></div>
+    </section>
+
+    <section>
+      <h2>Корзина</h2>
+      <div id="cart-items" data-testid="cart-items"></div>
+      <div class="promo-form">
+        <input type="text" id="promo-input" data-testid="promo-input" placeholder="Промокод (напр. SALE10)" maxlength="20">
+        <button class="btn-secondary" id="apply-promo" data-testid="apply-promo">Применить</button>
+      </div>
+      <div id="message" data-testid="message"></div>
+      <div class="totals" id="totals" data-testid="totals"></div>
+      <button class="btn-checkout" id="checkout-btn" data-testid="checkout" disabled>Оформить заказ</button>
+    </section>
+  </main>
+
+  <div id="order-modal" data-testid="order-modal">
+    <div class="modal-content">
+      <h3>Заказ оформлен!</h3>
+      <p>Номер заказа: <strong id="order-id" data-testid="order-id"></strong></p>
+      <p>Сумма: <strong id="order-total"></strong> ₽</p>
+      <button class="btn-primary" id="close-modal">Закрыть</button>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

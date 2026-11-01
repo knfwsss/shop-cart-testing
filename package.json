@@ -1,0 +1,42 @@
+{
+  "name": "shop-cart-lab",
+  "version": "1.1.0",
+  "description": "Корзина интернет-магазина и автотесты к лабораторным по тестированию ПО",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test tests/lr1_unit/*.test.js tests/lr1_integration/*.test.js",
+    "test:watch": "node --test --watch tests/lr1_unit/*.test.js tests/lr1_integration/*.test.js",
+    "test:ui": "playwright test --project=ui",
+    "test:api": "playwright test --project=api",
+    "test:postman": "node tests/lr4_api/postman/run-newman.js",
+    "test:security": "playwright test --project=security",
+    "test:all": "npm test && playwright test && npm run test:postman",
+    "report": "playwright show-report",
+    "lint": "eslint .",
+    "postman:build": "node tests/lr4_api/postman/build-collection.js",
+    "load:smoke": "k6 run tests/lr5_load/smoke.js",
+    "load:test": "k6 run tests/lr5_load/load.js",
+    "load:stress": "k6 run tests/lr5_load/stress.js",
+    "load:spike": "k6 run tests/lr5_load/spike.js"
+  },
+  "keywords": [
+    "testing",
+    "e-commerce",
+    "cart"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.22.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.55.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "eslint": "^10.14.0",
+    "eslint-plugin-security": "^4.2.1",
+    "globals": "^17.14.0",
+    "newman": "^6.2.3"
+  }
+}

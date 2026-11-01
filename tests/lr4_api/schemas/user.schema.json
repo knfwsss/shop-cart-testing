@@ -1,0 +1,11 @@
+{
+  "$id": "user",
+  "type": "object",
+  "required": ["id", "email", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "email": { "type": "string", "format": "email" },
+    "createdAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

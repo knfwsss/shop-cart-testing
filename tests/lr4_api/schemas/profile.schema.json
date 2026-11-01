@@ -1,0 +1,12 @@
+{
+  "$id": "profile",
+  "type": "object",
+  "required": ["id", "email", "createdAt", "ordersCount"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "email": { "type": "string", "format": "email" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "ordersCount": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": false
+}

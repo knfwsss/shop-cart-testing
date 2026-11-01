@@ -1,0 +1,28 @@
+{
+  "$id": "cart",
+  "type": "object",
+  "required": ["items", "promoCode", "promoApplied", "subtotal", "discountPercent", "discount", "total"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["productId", "name", "unitPrice", "quantity"],
+        "properties": {
+          "productId": { "type": "string" },
+          "name": { "type": "string" },
+          "unitPrice": { "type": "integer", "minimum": 1 },
+          "quantity": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "promoCode": { "type": ["string", "null"] },
+    "promoApplied": { "type": "boolean" },
+    "subtotal": { "type": "integer", "minimum": 0 },
+    "discountPercent": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "discount": { "type": "integer", "minimum": 0 },
+    "total": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": false
+}

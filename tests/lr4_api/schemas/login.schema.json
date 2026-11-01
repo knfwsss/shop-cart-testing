@@ -1,0 +1,11 @@
+{
+  "$id": "login",
+  "type": "object",
+  "required": ["token", "tokenType", "expiresIn"],
+  "properties": {
+    "token": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "tokenType": { "const": "Bearer" },
+    "expiresIn": { "type": "integer", "minimum": 1 }
+  },
+  "additionalProperties": false
+}

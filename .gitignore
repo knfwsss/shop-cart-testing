@@ -1,0 +1,6 @@
+node_modules/
+playwright-report/
+test-results/
+reports/
+tests/lr5_load/results/raw/
+.DS_Store

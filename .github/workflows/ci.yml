@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Автотесты (ЛР1, ЛР3, ЛР4, ЛР6)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: SAST — ESLint с правилами безопасности
+        run: npm run lint
+
+      - name: Аудит зависимостей приложения
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: ЛР1 — unit и интеграционные тесты
+        run: npm test
+
+      - name: Установка Chromium для Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: ЛР4 — API-тесты (Playwright)
+        run: npm run test:api
+        env:
+          PW_REPORT_DIR: reports/api
+
+      - name: ЛР4 — Postman-коллекция (Newman)
+        run: npm run test:postman
+
+      - name: ЛР6 — тесты безопасности
+        run: npm run test:security
+        env:
+          PW_REPORT_DIR: reports/security
+
+      - name: ЛР3 — UI-тесты
+        run: npm run test:ui
+        env:
+          PW_REPORT_DIR: reports/ui
+
+      - name: Отчёты о прогоне
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            reports/
+            test-results/
+          retention-days: 14
+
+  load-smoke:
+    name: ЛР5 — короткий нагрузочный прогон k6
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci --omit=dev
+
+      - uses: grafana/setup-k6-action@v1
+
+      - name: Запуск корзины
+        run: |
+          node src/server.js &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:3000/api/health && exit 0
+            sleep 1
+          done
+          exit 1
+
+      - name: k6 smoke с порогами SLA
+        run: k6 run tests/lr5_load/smoke.js
