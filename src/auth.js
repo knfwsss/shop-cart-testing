@@ -12,6 +12,13 @@ const COMMON_PASSWORDS = new Set([
   'admin123', 'admin1234', 'iloveyou1', 'abc12345', '1q2w3e4r', '1qaz2wsx', 'qwertyuiop1',
 ]);
 const DEFAULT_TOKEN_TTL_MS = 60 * 60 * 1000;
+const DEFAULT_LOGIN_LIMITS = {
+  maxFailuresPerEmail: 5,
+  maxFailuresPerIp: 100,
+  windowMs: 15 * 60 * 1000,
+  lockMs: 15 * 60 * 1000,
+};
+const LOCKED_MESSAGE = 'Слишком много неудачных попыток входа. Попробуйте позже';
 
 function validateEmail(email) {
   if (typeof email !== 'string' || email.length === 0) return 'Укажите email';
@@ -54,9 +61,44 @@ function publicUser(user) {
   return { id: user.id, email: user.email, createdAt: user.createdAt };
 }
 
-function createAuth({ tokenTtlMs = DEFAULT_TOKEN_TTL_MS, now = Date.now } = {}) {
+function createAuth({
+  tokenTtlMs = DEFAULT_TOKEN_TTL_MS,
+  now = Date.now,
+  loginLimits = {},
+  logSecurityEvent = (message) => console.warn(`[security] ${message}`),
+} = {}) {
   const users = new Map();
   const tokens = new Map();
+  const limits = { ...DEFAULT_LOGIN_LIMITS, ...loginLimits };
+  const failures = new Map();
+
+  function lockedUntil(key) {
+    const record = failures.get(key);
+    return record && record.lockedUntil > now() ? record.lockedUntil : 0;
+  }
+
+  // Возвращает true, если эта неудачная попытка превысила лимит и ключ заблокирован.
+  function recordFailure(key, max) {
+    const t = now();
+    let record = failures.get(key);
+    if (!record || t - record.windowStart > limits.windowMs) {
+      record = { count: 0, windowStart: t, lockedUntil: 0 };
+    }
+    record.count += 1;
+    const locked = record.count >= max;
+    if (locked) record.lockedUntil = t + limits.lockMs;
+    failures.set(key, record);
+    return locked;
+  }
+
+  function registerFailure(email, ip) {
+    if (recordFailure(`email:${email}`, limits.maxFailuresPerEmail)) {
+      logSecurityEvent(`вход для ${email} заблокирован после ${limits.maxFailuresPerEmail} неверных паролей, IP ${ip}`);
+    }
+    if (recordFailure(`ip:${ip}`, limits.maxFailuresPerIp)) {
+      logSecurityEvent(`вход с IP ${ip} заблокирован после ${limits.maxFailuresPerIp} неудачных попыток`);
+    }
+  }
   // Хеш-заглушка: вход с несуществующим email тратит столько же времени, сколько с существующим.
   const dummyHashPromise = hashPassword(crypto.randomBytes(16).toString('hex'));
 
@@ -88,19 +130,27 @@ function createAuth({ tokenTtlMs = DEFAULT_TOKEN_TTL_MS, now = Date.now } = {}) 
     return { status: 201, user: publicUser(user) };
   }
 
-  async function login(body) {
+  async function login(body, { ip = 'unknown' } = {}) {
     const { email, password } = body || {};
     if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
       return { status: 400, error: 'Укажите email и пароль' };
     }
-    const user = users.get(email.toLowerCase());
-    if (!user) {
-      await verifyPassword(password, await dummyHashPromise);
+    const key = email.toLowerCase();
+    // Блокировка действует и для несуществующих email, иначе по ней можно узнать, есть ли аккаунт.
+    const until = Math.max(lockedUntil(`email:${key}`), lockedUntil(`ip:${ip}`));
+    if (until) {
+      return { status: 429, error: LOCKED_MESSAGE, retryAfter: Math.ceil((until - now()) / 1000) };
+    }
+
+    const user = users.get(key);
+    let ok = false;
+    if (user) ok = await verifyPassword(password, user.passwordHash);
+    else await verifyPassword(password, await dummyHashPromise);
+    if (!ok) {
+      registerFailure(key, ip);
       return { status: 401, error: 'Неверный email или пароль' };
     }
-    if (!(await verifyPassword(password, user.passwordHash))) {
-      return { status: 401, error: 'Неверный email или пароль' };
-    }
+    failures.delete(`email:${key}`);
 
     const token = crypto.randomBytes(32).toString('hex');
     tokens.set(token, { userId: user.id, email: user.email, expiresAt: now() + tokenTtlMs });

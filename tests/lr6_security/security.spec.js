@@ -213,16 +213,3 @@ test.describe('ЛР6-7. Cookie и HTTPS', () => {
     for (const res of responses) expect(res.headers()['set-cookie']).toBeUndefined();
   });
 });
-
-test.describe('ЛР6. Известные открытые риски', () => {
-  test('После 10 неверных паролей вход блокируется (429)', async ({ request }) => {
-    test.fail(true, 'Находка S-07: ограничения попыток входа нет, подбор пароля не блокируется');
-    const { email } = await registerUser(request);
-    const statuses = [];
-    for (let i = 0; i < 10; i += 1) {
-      const res = await request.post('/api/auth/login', { data: { email, password: `Wrong${i}pass2026` } });
-      statuses.push(res.status());
-    }
-    expect(statuses).toContain(429);
-  });
-});

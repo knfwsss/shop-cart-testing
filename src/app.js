@@ -52,9 +52,9 @@ function cartResponse(cart) {
   };
 }
 
-function createApp({ tokenTtlMs, now } = {}) {
+function createApp({ tokenTtlMs, now, loginLimits, logSecurityEvent } = {}) {
   const app = express();
-  const auth = createAuth({ tokenTtlMs, now });
+  const auth = createAuth({ tokenTtlMs, now, loginLimits, logSecurityEvent });
   const sessions = new Map();
   const ordersByUser = new Map();
 
@@ -158,7 +158,8 @@ function createApp({ tokenTtlMs, now } = {}) {
   });
 
   app.post('/api/auth/login', (req, res, next) => {
-    auth.login(req.body).then((result) => {
+    auth.login(req.body, { ip: req.ip }).then((result) => {
+      if (result.retryAfter) res.set('Retry-After', String(result.retryAfter));
       if (result.error) return res.status(result.status).json({ error: result.error });
       return res.json(result.body);
     }, next);
